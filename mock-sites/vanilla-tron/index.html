@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Web Tester</title>
+
+    <script src="https://rawgit.com/tronprotocol/tron-web/master/dist/TronWeb.js"></script>
+    <!--<script src="./tronweb.js"></script>-->
+    <script src="../../bundles/scatterjs-core.min.js"></script>
+    <script src="../../bundles/scatterjs-plugin-tron.min.js"></script>
+</head>
+<body>
+
+<button onclick="login()">Get Identity</button>
+<button onclick="logout()">Forget Identity</button>
+<button onclick="transfer()">Transfer</button>
+<button onclick="testContract()">Test Contract</button>
+
+<script>
+
+
+    let tron, scatter, contract;
+    const network = ScatterJS.Network.fromJson({
+        blockchain:'trx',
+        chainId:'1',
+        host:'api.trongrid.io',
+        port:443,
+        protocol:'https'
+    });
+
+    const HttpProvider = TronWeb.providers.HttpProvider;
+    const provider = new HttpProvider(network.fullhost());
+    const tronWeb = new TronWeb(provider, provider, network.fullhost());
+    tronWeb.setDefaultBlock('latest');
+
+    ScatterJS.plugins( new ScatterTron() );
+
+    ScatterJS.scatter.connect('ScatterTronTest').then(connected => {
+        if(!connected) return false;
+        scatter = ScatterJS.scatter;
+        tron = scatter.trx(network, tronWeb);
+        contract = tron.contract(contractData.abi, contractData.address);
+    });
+
+    window.login = async () => {
+        await scatter.suggestNetwork(network);
+        await scatter.getIdentity({accounts:[network]});
+        console.log('account', scatter.identity.accounts);
+    };
+
+    window.logout = () => {
+        scatter.forgetIdentity();
+    };
+
+    window.transfer = async () => {
+        const send = await tron.transactionBuilder.sendTrx('TYkfNHvpfwU7iX2hUpXQ7pjRY7Lg6SEZ96', 1);
+        const sent = await tron.trx.sign(send);
+        console.log('sent', sent);
+    };
+
+    window.hookTransfer = () => {
+        const eos = Eos({httpEndpoint:`${network.protocol}://${network.host}:${network.port}`, signProvider:scatter.eosHook(network)});
+        const account = scatter.identity.accounts.find(x => x.blockchain === 'eos');
+        const opts = { authorization:[`${account.name}@${account.authority}`] };
+        eos.transfer(account.name, 'eosio', '1.0000 EOS', '', opts).then(trx => {
+            console.log('trx', trx);
+        }).catch(err => {
+            console.error(err);
+        })
+    };
+
+    window.testContract = async () => {
+        const sent = await contract.postMessage('hello').send({
+            shouldPollResponse: true,
+            callValue: 0
+        }).catch(x => x);
+        console.log('sent', sent);
+    };
+
+
+
+    const contractData = {
+        "address": "41a4997124a328a4615eab437cede31da47a31b375",
+        "abi": [
+            {
+                "constant": true,
+                "inputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "messages",
+                "outputs": [
+                    {
+                        "name": "creator",
+                        "type": "address"
+                    },
+                    {
+                        "name": "message",
+                        "type": "string"
+                    },
+                    {
+                        "name": "tips",
+                        "type": "uint256"
+                    },
+                    {
+                        "name": "tippers",
+                        "type": "uint256"
+                    },
+                    {
+                        "name": "time",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [
+                    {
+                        "name": "_feeToPost",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "updateFeeToPost",
+                "outputs": [],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "feeToPost",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "minimumTip",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [],
+                "name": "withdraw",
+                "outputs": [],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [
+                    {
+                        "name": "_id",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "tipMessage",
+                "outputs": [],
+                "payable": true,
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [
+                    {
+                        "name": "_minimumTip",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "updateMinimumTip",
+                "outputs": [],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [
+                    {
+                        "name": "message",
+                        "type": "string"
+                    }
+                ],
+                "name": "postMessage",
+                "outputs": [],
+                "payable": true,
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "owner",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "current",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [
+                    {
+                        "name": "_owner",
+                        "type": "address"
+                    }
+                ],
+                "name": "changeOwner",
+                "outputs": [],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "topPosts",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "constructor"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "name": "id",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "MessagePosted",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "name": "id",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "MessageTipped",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "name": "id",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "MessageAddedToTopPosts",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "name": "id",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "MessageRemovedFromTopPosts",
+                "type": "event"
+            }
+        ]
+    }
+
+</script>
+</body>
+</html>

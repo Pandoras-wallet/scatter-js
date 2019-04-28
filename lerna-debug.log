@@ -1,0 +1,6 @@
+38 error Error: Command failed: git tag scatterjs-core@2.7.3 -m scatterjs-core@2.7.3
+38 error fatal: tag 'scatterjs-core@2.7.3' already exists
+38 error
+38 error     at makeError (C:\Work\Libraries\scatter-js\node_modules\@lerna\child-process\node_modules\execa\index.js:172:9)
+38 error     at Promise.all.then.arr (C:\Work\Libraries\scatter-js\node_modules\@lerna\child-process\node_modules\execa\index.js:277:16)
+38 error     at <anonymous>
